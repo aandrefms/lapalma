@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: services-health-alert
+  namespace: cronjobs
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 10
+  schedule: '* * * * *'
+  successfulJobsHistoryLimit: 5
+  suspend: false
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: NodeType
+                        operator: In
+                        values:
+                          - apps
+          dnsPolicy: ClusterFirst
+          restartPolicy: Never
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          containers:
+            - image: aandrefms/service_health:latest
+              imagePullPolicy: Always
+              name: services-health-alert
+              resources:
+                requests:
+                  cpu: "20m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"
+              securityContext:
+                capabilities: {}
+                procMount: Default
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+      backoffLimit: 6

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumer
+  template:
+    metadata:
+      labels:
+        app: consumer
+    spec:
+      containers:
+      - name: consumer-container
+        image: aandrefms/consumer:latest
+        ports:
+        - containerPort: 5001
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: ""
+        - name: AWS_SECRET_ACCESS_KEY
+          value: ""
+        - name: AWS_SESSION_TOKEN
+          value: ""
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: APP_NAME
+          value: consumer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: apps
+  name: consumer
+  labels:
+    app: consumer
+spec:
+  ports:
+    - port: 5001
+      name: consumer
+  clusterIP: None
+  selector:
+    app: consumer

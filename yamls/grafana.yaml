@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monitoring
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  ports:
+    - port: 3000
+      name: grafana
+  clusterIP: None
+  selector:
+    app: grafana
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+  namespace: monitoring
+spec:
+  serviceName: "grafana"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: NodeType
+                    operator: In
+                    values:
+                      - apps
+      securityContext:
+        fsGroup: 472
+        supplementalGroups:
+          - 0
+      containers:
+        - env:
+            - name: GF_DATAPROXY_DIALTIMEOUT
+              value: "600"
+            - name: GF_DATAPROXY_IDLE_CONN_TIMEOUT_SECONDS
+              value: "600"
+            - name: GF_DATAPROXY_KEEP_ALIVE_SECONDS
+              value: "600"
+            - name: GF_DATAPROXY_LOGGING
+              value: "true"
+            - name: GF_DATAPROXY_TIMEOUT
+              value: "600"
+            - name: GF_DATAPROXY_TLS_HANDSHAKE_TIMEOUT_SECONDS
+              value: "600"
+          name: grafana
+          image: grafana/grafana:10.0.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 2
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 200m
+              memory: 200Mi
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-storage
+      volumes:
+        - name: grafana-storage
+          emptyDir: {}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`PLACEHOLDER`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
+          namespace: monitoring

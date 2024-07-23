@@ -1,0 +1,32 @@
+communications:
+  'default-group':
+    webhook:
+      enabled: true
+      url:  
+      bindings:
+        sources:
+          - k8s-err-events
+          - k8s-recommendation-events
+settings:
+  clusterName: cluster
+  lifecycleServer:
+    enabled: true
+    port: 2113
+  healthPort: 2114
+  upgradeNotifier: true
+  log:
+    level: info
+    disableColors: false
+  systemConfigMap:
+    name: botkube-system
+  persistentConfig:
+    startup:
+      configMap:
+        name: botkube-startup-config
+        annotations: {}
+      fileName: "_startup_state.yaml"
+    runtime:
+      configMap:
+        name: botkube-runtime-config
+        annotations: {}
+      fileName: "_runtime_state.yaml"

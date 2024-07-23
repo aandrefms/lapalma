@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basic-app
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basic-app
+  template:
+    metadata:
+      labels:
+        app: basic-app
+    spec:
+      containers:
+      - name: basic-app-container
+        image: aandrefms/my-app:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: ""
+        - name: AWS_SECRET_ACCESS_KEY
+          value: ""
+        - name: AWS_SESSION_TOKEN
+          value: ""
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: APP_NAME
+          value: basic-app
+---   
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: apps
+  name: basic-app
+  labels:
+    app: basic-app
+spec:
+  ports:
+    - port: 5000
+      name: basic-app
+  clusterIP: None
+  selector:
+    app: basic-app
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: basic-app
+  namespace: apps
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`PLACEHOLDER`)
+      kind: Rule
+      services:
+        - name: basic-app
+          port: 5000
+          namespace: apps

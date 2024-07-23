@@ -1,0 +1,7 @@
+infraSourceConfig:
+  owner: andre
+  name: infra
+
+project:
+  name: lapalma-infra
+  environment: prod
